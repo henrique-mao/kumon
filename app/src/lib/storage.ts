@@ -8,21 +8,27 @@ export interface AppData {
   profiles: Profile[];
 }
 
+/** Normaliza dados de versões anteriores (ou importados) para o formato atual. */
+export function migrate(raw: AppData): AppData {
+  if (!raw || !Array.isArray(raw.profiles)) throw new Error('dados inválidos');
+  return {
+    version: 1,
+    profiles: raw.profiles.map((p) => ({
+      ...p,
+      settings: { ...defaultSettings(p.age), ...p.settings },
+      errors: p.errors ?? [],
+      booksRead: p.booksRead ?? {},
+      pcpm: p.pcpm ?? [],
+      customWords: p.customWords ?? [],
+      sondagens: p.sondagens ?? [],
+    })),
+  };
+}
+
 export function load(): AppData {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const data = JSON.parse(raw) as AppData;
-      // migração leve: garante campos novos
-      data.profiles = data.profiles.map((p) => ({
-        ...p,
-        settings: { ...defaultSettings(p.age), ...p.settings },
-        errors: p.errors ?? [],
-        booksRead: p.booksRead ?? {},
-        pcpm: p.pcpm ?? [],
-      }));
-      return data;
-    }
+    if (raw) return migrate(JSON.parse(raw) as AppData);
   } catch {
     /* armazenamento indisponível ou corrompido */
   }

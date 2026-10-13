@@ -1,12 +1,13 @@
 // Monta a sessão diária: aquecimento (revisão espaçada) → conteúdo novo por trilha → leitura de livro.
 import type { Book, Item, Rng, Skill, TrackId } from '../curriculum/types';
+import { familyItem } from '../curriculum/familia';
 import { dueReviews } from './mastery';
 import { TRACKS, type Profile } from './model';
 
 export interface PlannedBlock {
   skillId: string;
   track: TrackId;
-  mode: 'novo' | 'revisao' | 'livro';
+  mode: 'novo' | 'revisao' | 'livro' | 'familia';
   items: Item[];
 }
 
@@ -40,6 +41,15 @@ export function buildSession(
     const s = byId.get(id)!;
     reviews.push({ skillId: id, track: s.track, mode: 'revisao', items: gen(s, REVIEW_ITEMS) });
     used += REVIEW_ITEMS * itemSeconds(s);
+  }
+
+  // 1b) Palavras da família (palavras geradoras) — curtinho, logo no começo
+  let family: PlannedBlock | null = null;
+  if (p.customWords?.length && enabled.includes('leitura')) {
+    const lettersFrom = skillsByTrack.leitura.findIndex((s) => s.step >= 'D4');
+    const letters = lettersFrom >= 0 && p.tracks.leitura.pointer >= lettersFrom;
+    family = { skillId: 'familia', track: 'leitura', mode: 'familia', items: Array.from({ length: 3 }, () => familyItem(p.customWords, rng, letters)) };
+    used += 3 * 14;
   }
 
   // 2) Conteúdo novo: um bloco por trilha (pela ordem de peso), depois blocos extras se houver tempo
@@ -97,6 +107,7 @@ export function buildSession(
   }
 
   const blocks: PlannedBlock[] = [...reviews];
+  if (family) blocks.push(family);
   for (const t of TRACKS) {
     if (blocksPerTrack[t][0]) blocks.push(blocksPerTrack[t][0]);
     if (t === 'leitura' && book?.track === 'leitura') blocks.push(book);

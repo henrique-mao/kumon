@@ -1,6 +1,7 @@
 // Narração (Text-to-Speech) e reconhecimento de voz do navegador.
 // MVP: vozes do sistema (pt-BR / en-US). Produção: substituir por áudios gravados por locutores (ver MRD).
 import type { Lang, Say } from '../curriculum/types';
+import { hasNarration, narrationKey, narrationUrl } from './audioStore';
 
 export interface VoiceOptions {
   rate: number;
@@ -39,10 +40,13 @@ function pickVoice(lang: Lang): SpeechSynthesisVoice | undefined {
 }
 
 let token = 0;
+let currentAudio: HTMLAudioElement | null = null;
 
 export function stopSpeaking() {
   token++;
   synth?.cancel();
+  currentAudio?.pause();
+  currentAudio = null;
   emit(null, false);
 }
 
@@ -55,7 +59,8 @@ export function speak(says: Say[], onWord?: (segment: number, charIndex: number)
   const my = ++token;
   const caption = says.map((s) => (s.hideCaption ? '🔊 …' : s.text)).join(' ');
   emit(caption, true);
-  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
+  const noTts = !synth || typeof SpeechSynthesisUtterance === 'undefined';
+  if (noTts && !says.some((x) => hasNarration(narrationKey(x.text, x.lang ?? 'pt')))) {
     // sem TTS: mantém a legenda visível por um tempo proporcional ao texto
     return new Promise((res) => setTimeout(() => { if (my === token) emit(caption, false); res(); }, 400 + caption.length * 45));
   }
@@ -69,8 +74,24 @@ export function speak(says: Say[], onWord?: (segment: number, charIndex: number)
       }
       const s = says[i];
       const seg = i++;
-      const u = new SpeechSynthesisUtterance(s.text);
       const lang = s.lang ?? 'pt';
+      // Voz gravada pela família tem prioridade sobre a voz sintética
+      const key = narrationKey(s.text, lang);
+      if (hasNarration(key)) {
+        narrationUrl(key).then((url) => {
+          if (my !== token) return resolve();
+          if (!url) return next();
+          const a = new Audio(url);
+          a.playbackRate = Math.max(0.7, Math.min(1.2, opts.rate));
+          currentAudio = a;
+          a.onended = next;
+          a.onerror = next;
+          a.play().catch(next);
+        });
+        return;
+      }
+      if (noTts) return next();
+      const u = new SpeechSynthesisUtterance(s.text);
       u.lang = lang === 'pt' ? 'pt-BR' : 'en-US';
       const v = pickVoice(lang);
       if (v) u.voice = v;
@@ -79,7 +100,7 @@ export function speak(says: Say[], onWord?: (segment: number, charIndex: number)
       u.onboundary = (e) => { if (e.name === 'word' || e.name === undefined) onWord?.(seg, e.charIndex); };
       u.onend = next;
       u.onerror = next;
-      synth.speak(u);
+      synth!.speak(u);
     };
     next();
   });

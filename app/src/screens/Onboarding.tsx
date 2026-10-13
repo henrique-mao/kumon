@@ -24,7 +24,7 @@ export function Onboarding({ ctx }: { ctx: Ctx }) {
               <li>Guardamos apenas: primeiro nome (ou apelido), idade e o progresso nas atividades.</li>
               <li>Tudo fica <strong>somente neste aparelho</strong> (armazenamento local do navegador). Nada é enviado a servidores.</li>
               <li>Sem anúncios, sem rastreadores, sem chat, sem compras dentro do app.</li>
-              <li>O reconhecimento de voz (opcional) usa o recurso do próprio navegador; não gravamos o áudio.</li>
+              <li>O reconhecimento de voz (opcional) usa o recurso do próprio navegador. Gravações de voz (leituras da criança e vozes da família) só acontecem quando alguém toca em “gravar” e ficam apenas neste aparelho.</li>
               <li>Você pode exportar ou apagar todos os dados a qualquer momento na Área dos adultos.</li>
             </ul>
             <label className="switch">

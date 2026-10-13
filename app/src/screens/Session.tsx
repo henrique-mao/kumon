@@ -16,8 +16,8 @@ import { sfx } from '../lib/sound';
 import { speak, stopSpeaking } from '../lib/speech';
 
 interface QEntry { item: Item; requeued: boolean }
-interface Acc { total: number; ok: number; times: number[]; hints: number }
-const emptyAcc = (): Acc => ({ total: 0, ok: 0, times: [], hints: 0 });
+interface Acc { total: number; ok: number; times: number[]; hints: number; outcomes: boolean[] }
+const emptyAcc = (): Acc => ({ total: 0, ok: 0, times: [], hints: 0, outcomes: [] });
 const FRUSTRATION = 3;
 
 export function Session({ ctx }: { ctx: Ctx }) {
@@ -46,7 +46,7 @@ export function Session({ ctx }: { ctx: Ctx }) {
   useEffect(() => () => stopSpeaking(), []);
   useEffect(() => {
     if (phase !== 'intro' || !block) return;
-    const label = block.mode === 'revisao' ? 'Revisão rapidinha' : block.mode === 'livro' ? 'Hora da história' : `Agora: ${info.child}!`;
+    const label = block.mode === 'revisao' ? 'Revisão rapidinha' : block.mode === 'livro' ? 'Hora da história' : block.mode === 'familia' ? 'Palavras especiais!' : `Agora: ${info.child}!`;
     speak([{ text: label }]);
     const t = setTimeout(() => setPhase('item'), 2600);
     return () => clearTimeout(t);
@@ -58,6 +58,11 @@ export function Session({ ctx }: { ctx: Ctx }) {
     p.errors = [...p.errors, ...pending.current.errors].slice(-300);
     p.pcpm = [...p.pcpm, ...pending.current.pcpm].slice(-100);
     pending.current = { errors: [], pcpm: [] };
+    if (b.mode === 'familia') {
+      p.stars += 1;
+      starsEarned.current += 1;
+      return p;
+    }
     if (b.mode === 'livro') {
       const bookId = (b.items[0] as Extract<Item, { kind: 'book' }>).bookId;
       p.booksRead[bookId] = (p.booksRead[bookId] ?? 0) + 1;
@@ -71,7 +76,7 @@ export function Session({ ctx }: { ctx: Ctx }) {
       const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
       decisions.current.push(...applyBlockResult(p, skill, SKILLS_BY_TRACK[skill.track], {
         skillId: b.skillId, date: today(), mode: b.mode === 'revisao' ? 'revisao' : 'novo',
-        total: a.total, firstTry: a.ok, avgTimeSec: median, hintsUsed: a.hints,
+        total: a.total, firstTry: a.ok, avgTimeSec: median, hintsUsed: a.hints, outcomes: a.outcomes,
       }));
       p.stars += 1;
       starsEarned.current += 1;
@@ -116,6 +121,7 @@ export function Session({ ctx }: { ctx: Ctx }) {
     if (r.scored && !entry.requeued) {
       a.total++;
       if (r.firstTry) a.ok++;
+      a.outcomes.push(r.firstTry);
       a.times.push(r.timeSec);
       a.hints += r.hints;
     }
@@ -185,8 +191,8 @@ export function Session({ ctx }: { ctx: Ctx }) {
         <Guide captions={ctx.profile!.settings.captions} />
         {phase === 'intro' && (
           <div className="activity">
-            <Img k={block.mode === 'livro' ? 'livro' : info.icon} size={140} className="celebrate" />
-            <h1 style={{ fontSize: '2.4rem' }}>{block.mode === 'revisao' ? 'Revisão rapidinha' : block.mode === 'livro' ? 'Hora da história' : info.child}</h1>
+            <Img k={block.mode === 'livro' ? 'livro' : block.mode === 'familia' ? 'familia' : info.icon} size={140} className="celebrate" />
+            <h1 style={{ fontSize: '2.4rem' }}>{block.mode === 'revisao' ? 'Revisão rapidinha' : block.mode === 'livro' ? 'Hora da história' : block.mode === 'familia' ? 'Palavras especiais' : info.child}</h1>
             <button className="btn huge primary" onClick={() => setPhase('item')}>Vamos!</button>
           </div>
         )}

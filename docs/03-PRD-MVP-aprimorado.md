@@ -84,9 +84,19 @@ Funcionalidade: Autocorreção
     E o item volta no fim do bloco
 ```
 
-## 6. Próximos passos (fase 2)
-- Narração gravada por locutores (sotaques regionais) e reconhecimento de voz infantil treinado em PT-BR.
-- Backend opcional (sincronização entre dispositivos, contas de escola, SSO), mantendo o modo local.
-- Modelo estatístico de proficiência (BKT/Elo) comparado às regras atuais em teste A/B de aprendizagem.
-- CMS para pedagogos, revisão humana de itens e estudo de eficácia com universidade.
-- Diagnóstico de escrita espontânea (psicogênese) registrado pelo professor; Libras.
+## 6. Fase 2 — implementada
+| Melhoria | Como funciona | Onde |
+|----------|---------------|------|
+| **Vozes da família** | O adulto grava os sons ("mmmm"), sílabas e palavras que a trilha de leitura realmente fala (lista extraída do currículo). A narração passa a usar a gravação no lugar da voz sintética, em todas as atividades. | aba "Vozes da família"; `lib/audioStore.ts`, `lib/speech.ts` |
+| **Gravações de leitura** | Nos livros, a criança toca em "🎙️ Gravar minha leitura"; os pais ouvem a evolução da fluência por data. | `BookReader.tsx`; aba "Gravações de leitura" |
+| **Palavras da família** (palavras geradoras — Paulo Freire) | Nome da criança, família, pet... com separação silábica automática (editável) e figura opcional. Entram na lição diária como bloco "Palavras especiais" (montar com sílabas ou letras, conforme o nível; achar a palavra). | aba "Palavras da família"; `curriculum/familia.ts`, `curriculum/escrita.ts` |
+| **Sondagem de escrita** (psicogênese) | Listas clássicas (polissílaba → monossílaba + frase); o educador digita a escrita da criança e o app **sugere** a hipótese (pré-silábica → alfabética); histórico por criança, coluna no painel da turma e linha no relatório semanal. | aba "Sondagem de escrita"; `curriculum/escrita.ts` |
+| **Modelo estatístico (BKT)** | Bayesian Knowledge Tracing estima a probabilidade de domínio item a item. Exibido no progresso; opcionalmente vira critério extra de avanço ("Regras + BKT ≥ 90%"), permitindo comparar os dois critérios. | `engine/bkt.ts`, `engine/mastery.ts`; Configurações |
+| **Dois aparelhos sem servidor** | Exportar em um aparelho e importar no outro: crianças novas são adicionadas e as existentes **mescladas** (históricos unidos, progresso mais avançado mantido). | `lib/merge.ts`; Configurações → Dados |
+| **Legendas que não entregam a resposta** | Em ditados e escolhas entre palavras escritas, a legenda mostra "🔊 …" no lugar da palavra-alvo. | `components/ItemRunner.tsx` |
+
+## 7. Próximos passos (fase 3)
+- Narração profissional gravada por locutores (sotaques regionais) e reconhecimento de voz infantil treinado em PT-BR.
+- Backend opcional (contas de escola, SSO, sincronização automática), mantendo o modo local.
+- Teste A/B de aprendizagem: regras vs. regras + BKT, com estudo de eficácia em parceria com universidade.
+- CMS para pedagogos com revisão humana de itens; Libras.

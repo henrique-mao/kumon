@@ -11,10 +11,13 @@ import { addDays, today, TRACK_INFO, TRACKS, type Decision, type Profile } from 
 import { daysActiveLast, masteredCount, minutesLast, recentAccuracy, streak, struggling } from '../engine/stats';
 import { listVoices, speak } from '../lib/speech';
 import { exportJson } from '../lib/storage';
+import { deleteReadingsOf } from '../lib/audioStore';
+import { FamilyVoices, FamilyWords, hipoteseLabel, ImportData, Readings, SondagemPanel } from './ParentsExtra';
 
 const TABS = [
   ['progresso', 'Progresso'], ['orientador', 'Decisões do orientador'], ['relatorio', 'Relatório semanal'],
-  ['certificados', 'Certificados'], ['previa', 'Prévia das atividades'], ['config', 'Configurações'], ['escola', 'Turma / Escola'], ['sobre', 'Método e privacidade'],
+  ['certificados', 'Certificados'], ['palavras', 'Palavras da família'], ['vozes', 'Vozes da família'], ['gravacoes', 'Gravações de leitura'],
+  ['sondagem', 'Sondagem de escrita'], ['previa', 'Prévia das atividades'], ['config', 'Configurações'], ['escola', 'Turma / Escola'], ['sobre', 'Método e privacidade'],
 ] as const;
 
 const pct = (x: number | null) => (x === null ? '—' : `${Math.round(x * 100)}%`);
@@ -53,6 +56,10 @@ export function Parents({ ctx, tab: tab0 }: { ctx: Ctx; tab?: string }) {
             {tab === 'config' && p && <Settings ctx={ctx} p={p} />}
             {tab === 'escola' && <School profiles={profiles} />}
             {tab === 'previa' && <Preview />}
+            {tab === 'palavras' && p && <FamilyWords ctx={ctx} p={p} />}
+            {tab === 'vozes' && p && <FamilyVoices p={p} />}
+            {tab === 'gravacoes' && p && <Readings p={p} />}
+            {tab === 'sondagem' && p && <SondagemPanel ctx={ctx} p={p} />}
             {tab === 'sobre' && <About />}
           </>
         )}
@@ -126,6 +133,7 @@ function Progress({ p }: { p: Profile }) {
                         <p className="small" style={{ margin: '4px 0' }}>Histórico: {st.history.map((h) => `${fmt(h.date)} ${Math.round((h.firstTry / h.total) * 100)}%${h.mode === 'revisao' ? ' (rev.)' : ''}`).join(' · ')}</p>
                       ) : <p className="small muted">Ainda não praticada.</p>}
                       {st?.nextReview && <p className="small">Próxima revisão: {fmt(st.nextReview)}</p>}
+                      {st?.pKnown !== undefined && <p className="small">Modelo estatístico (BKT): {Math.round(st.pKnown * 100)}% de probabilidade de domínio</p>}
                       <p className="small"><strong>Atividade offline:</strong> {k.offlineTip}</p>
                     </div>
                   );
@@ -172,6 +180,7 @@ export function weeklyReportText(p: Profile): string {
     mastered.length ? `• 🏅 Dominou ${mastered.length} habilidade(s): ${mastered.join('; ')}.` : '• Esta semana foi de prática e consolidação (nenhuma habilidade nova dominada — e tudo bem!).',
     ...TRACKS.filter((t) => p.settings.enabled[t]).map((t) => `• ${TRACK_INFO[t].name}: degrau ${SKILLS_BY_TRACK[t][p.tracks[t].pointer]?.step} — ${SKILLS_BY_TRACK[t][p.tracks[t].pointer]?.title} (acerto recente ${pct(recentAccuracy(p, SKILLS_BY_TRACK[t]))}).`),
     ...hard.map((s) => `• ⚠️ Pede atenção: ${s.title}.`),
+    ...(p.sondagens?.length ? [`• ✍️ Última sondagem de escrita (${fmt(p.sondagens[p.sondagens.length - 1].date)}): ${hipoteseLabel(p.sondagens[p.sondagens.length - 1].phase)}.`] : []),
     '',
     `💡 Dica da semana (5 min, sem tela): ${tipSkill?.offlineTip ?? 'Leiam juntos um livro antes de dormir.'}`,
   ];
@@ -237,6 +246,12 @@ function Settings({ ctx, p }: { ctx: Ctx; p: Profile }) {
         <Toggle label="Fonte e espaçamento amigáveis para dislexia" v={s.dyslexiaFont} on={(v) => set((x) => { x.settings.dyslexiaFont = v; })} />
         <Toggle label="Sem cronômetro (fluência medida, mas não exigida para avançar)" v={s.untimed} on={(v) => set((x) => { x.settings.untimed = v; })} />
         <Toggle label="Legendas da narração" v={s.captions} on={(v) => set((x) => { x.settings.captions = v; })} />
+        <label className="field">Critério de avanço do orientador
+          <select value={s.advanceModel} onChange={(e) => set((x) => { x.settings.advanceModel = e.target.value as Profile['settings']['advanceModel']; })}>
+            <option value="regras">Regras do método (≥ 90% de acerto no tempo-padrão, em 2 sessões)</option>
+            <option value="regras+bkt">Regras + modelo estatístico (BKT ≥ 90% de probabilidade de domínio)</option>
+          </select>
+        </label>
         <label className="field">Velocidade da narração: {s.voiceRate.toFixed(2)}
           <input type="range" min={0.6} max={1.2} step={0.05} value={s.voiceRate} onChange={(e) => set((x) => { x.settings.voiceRate = Number(e.target.value); })} />
         </label>
@@ -268,10 +283,12 @@ function Settings({ ctx, p }: { ctx: Ctx; p: Profile }) {
           <button className="btn small" style={{ color: 'var(--bad)' }} onClick={() => {
             if (!confirm(`Apagar todos os dados de ${p.name}? Isto não pode ser desfeito.`)) return;
             ctx.setData((d) => ({ ...d, profiles: d.profiles.filter((x) => x.id !== p.id) }));
+            deleteReadingsOf(p.id).catch(() => undefined);
             ctx.selectProfile(null);
             ctx.go({ name: 'perfis' });
           }}>🗑️ Apagar dados desta criança</button>
         </div>
+        <ImportData ctx={ctx} />
       </div>
     </div>
   );
@@ -316,12 +333,13 @@ function School({ profiles }: { profiles: Profile[] }) {
       <div className="card" style={{ overflowX: 'auto' }}>
         <h2>Visão geral</h2>
         <table>
-          <thead><tr><th>Criança</th>{TRACKS.map((t) => <th key={t}>{TRACK_INFO[t].name}</th>)}<th>Dias (7d)</th></tr></thead>
+          <thead><tr><th>Criança</th>{TRACKS.map((t) => <th key={t}>{TRACK_INFO[t].name}</th>)}<th>Hipótese de escrita</th><th>Dias (7d)</th></tr></thead>
           <tbody>
             {profiles.map((p) => (
               <tr key={p.id}>
                 <td><strong>{p.name}</strong> <span className="muted small">{p.age}a</span></td>
                 {TRACKS.map((t) => <td key={t}>{SKILLS_BY_TRACK[t][p.tracks[t].pointer]?.step} · {masteredCount(p, SKILLS_BY_TRACK[t])} ✓ · {pct(recentAccuracy(p, SKILLS_BY_TRACK[t]))}</td>)}
+                <td className="small">{p.sondagens?.length ? `${hipoteseLabel(p.sondagens[p.sondagens.length - 1].phase)} (${fmt(p.sondagens[p.sondagens.length - 1].date)})` : '—'}</td>
                 <td>{daysActiveLast(p)}</td>
               </tr>
             ))}

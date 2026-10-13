@@ -1,6 +1,7 @@
 // "Orientador virtual": decide avançar, repetir, voltar um passo ou revisar —
 // sempre gerando uma explicação legível para os adultos (explicabilidade).
 import type { Skill } from '../curriculum/types';
+import { BKT_MASTERY, bktRun, DEFAULT_BKT } from './bkt';
 import {
   addDays, emptySkillState, REVIEW_INTERVALS,
   type BlockResult, type Decision, type Profile, type SkillState,
@@ -33,6 +34,8 @@ export function applyBlockResult(p: Profile, skill: Skill, trackSkills: Skill[],
   const name = p.name;
   const out: Decision[] = [];
   const d = (kind: Decision['kind'], text: string) => out.push({ date: r.date, skillId: skill.id, kind, text });
+  if (r.outcomes?.length) st.pKnown = bktRun(st.pKnown ?? DEFAULT_BKT.init, r.outcomes);
+  const bktOk = p.settings.advanceModel !== 'regras+bkt' || (st.pKnown ?? 0) >= BKT_MASTERY;
 
   if (r.mode === 'revisao') {
     if (acc >= REPEAT_ACC) {
@@ -56,7 +59,10 @@ export function applyBlockResult(p: Profile, skill: Skill, trackSkills: Skill[],
   if (acc >= MASTERY_ACC && fluent) {
     st.passes += 1;
     st.lowStreak = 0;
-    if (st.passes >= PASSES_TO_MASTER) {
+    if (st.passes >= PASSES_TO_MASTER && !bktOk) {
+      st.passes = PASSES_TO_MASTER;
+      d('repeticao', `${name} acertou ${pct(acc)} em "${skill.title}", mas o modelo estatístico ainda estima ${pct(st.pKnown ?? 0)} de domínio (meta ${pct(BKT_MASTERY)}). Mais uma sessão para confirmar.`);
+    } else if (st.passes >= PASSES_TO_MASTER) {
       st.status = 'dominado';
       st.masteredAt = r.date;
       st.reviewStage = 0;
@@ -113,6 +119,7 @@ export function applyPlacement(p: Profile, trackSkills: Skill[], pointer: number
     st.passes = PASSES_TO_MASTER;
     st.masteredAt = date;
     st.reviewStage = 1;
+    st.pKnown = 0.95;
     // espalha as revisões para não sobrecarregar os primeiros dias
     st.nextReview = addDays(date, 1 + (i % 7));
   });

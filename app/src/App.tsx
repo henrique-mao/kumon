@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Profile } from './engine/model';
+import { setActiveProfile } from './lib/audioStore';
 import { configureVoice } from './lib/speech';
 import { load, save, type AppData } from './lib/storage';
 import { Album } from './screens/Album';
@@ -43,6 +44,7 @@ export default function App() {
 
   useEffect(() => save(data), [data]);
   useEffect(() => {
+    setActiveProfile(profile?.id ?? null);
     if (!profile) return;
     configureVoice({ rate: profile.settings.voiceRate, voicePt: profile.settings.voicePt, voiceEn: profile.settings.voiceEn });
     document.body.classList.toggle('calm', profile.settings.calm);

@@ -26,6 +26,8 @@ export interface Settings {
   /** Mostrar legenda do que a narração fala. */
   captions: boolean;
   voiceRate: number;
+  /** Critério de avanço: só regras (padrão Kumon) ou regras + modelo estatístico (BKT). */
+  advanceModel: 'regras' | 'regras+bkt';
   voicePt?: string;
   voiceEn?: string;
 }
@@ -40,6 +42,8 @@ export interface BlockResult {
   firstTry: number;
   avgTimeSec: number;
   hintsUsed: number;
+  /** Sequência de acertos de primeira (para o modelo estatístico). */
+  outcomes?: boolean[];
 }
 
 export interface SkillState {
@@ -54,6 +58,8 @@ export interface SkillState {
   reviewStage: number;
   nextReview?: string;
   masteredAt?: string;
+  /** Probabilidade estimada de domínio (Bayesian Knowledge Tracing). */
+  pKnown?: number;
 }
 
 export interface Decision {
@@ -96,6 +102,29 @@ export interface Profile {
   /** Palavras corretas por minuto (leitura em voz alta). */
   pcpm: { date: string; value: number }[];
   booksRead: Record<string, number>;
+  /** Palavras geradoras (Paulo Freire): nome da criança, família, pet... */
+  customWords: CustomWord[];
+  /** Sondagens de escrita registradas pelo professor/família (psicogênese). */
+  sondagens: Sondagem[];
+}
+
+export interface CustomWord {
+  /** Em maiúsculas, com acentos. */
+  w: string;
+  /** Sílabas em maiúsculas. */
+  syl: string[];
+  img?: string;
+}
+
+export type Hipotese = 'pre-silabica' | 'silabica-sem-valor' | 'silabica-com-valor' | 'silabico-alfabetica' | 'alfabetica';
+
+export interface Sondagem {
+  date: string;
+  words: { target: string; written: string }[];
+  sentence?: { target: string; written: string };
+  phase: Hipotese;
+  suggested: Hipotese;
+  note?: string;
 }
 
 export function defaultSettings(age: number): Settings {
@@ -109,6 +138,7 @@ export function defaultSettings(age: number): Settings {
     untimed: age <= 5,
     captions: true,
     voiceRate: 0.95,
+    advanceModel: 'regras',
   };
 }
 
@@ -135,6 +165,8 @@ export function newProfile(name: string, age: number, avatar: string): Profile {
     certificates: [],
     pcpm: [],
     booksRead: {},
+    customWords: [],
+    sondagens: [],
   };
 }
 

@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getBook } from '../../curriculum/books';
 import type { Book, Item } from '../../curriculum/types';
 import { sfx } from '../../lib/sound';
+import { getActiveProfile, saveReading } from '../../lib/audioStore';
+import { canRecord, startRecording, type Recording } from '../../lib/recorder';
 import { speak, stopSpeaking } from '../../lib/speech';
+import { today } from '../../engine/model';
 import { Img } from '../Tokens';
 import { Choose } from './Basic';
 import type { ActivityProps } from './common';
@@ -17,6 +20,25 @@ export function BookReader({ book, color, showDialogic, onFinish }: { book: Book
   const [missed, setMissed] = useState(false);
   const [hint, setHint] = useState(0);
   const fallback = useRef<number | undefined>(undefined);
+  const [rec, setRec] = useState<Recording | null>(null);
+  const [saved, setSaved] = useState<number | null>(null);
+  const recordable = canRecord() && !!getActiveProfile();
+  const toggleRec = async () => {
+    if (rec) {
+      const { blob, seconds } = await rec.stop();
+      setRec(null);
+      const pid = getActiveProfile();
+      if (pid && seconds > 0.8) {
+        await saveReading({ profileId: pid, date: today(), bookId: book.id, bookTitle: book.title, page, text, seconds }, blob).catch(() => undefined);
+        setSaved(page);
+        speak([{ text: 'Gravei a sua leitura! Muito bem!' }]);
+      }
+      return;
+    }
+    stopSpeaking();
+    try { setRec(await startRecording(30000)); } catch { /* sem permissão de microfone */ }
+  };
+  useEffect(() => () => { rec?.stop(); }, [rec]);
   const lang = book.lang;
   const text = book.pages[page]?.text ?? '';
   const words = useMemo(() => {
@@ -98,7 +120,12 @@ export function BookReader({ book, color, showDialogic, onFinish }: { book: Book
       <div className="actions">
         <button className="btn" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="página anterior">◀</button>
         <button className="btn" onClick={read}>🔊 Ler para mim</button>
-        <button className="btn primary" onClick={() => { if (page + 1 < book.pages.length) setPage(page + 1); else if (book.questions.length) setQ(0); else onFinish(1); }} aria-label="próxima página">▶</button>
+        {recordable && (
+          <button className={`btn ${rec ? 'primary' : ''}`} onClick={toggleRec} aria-label={rec ? 'parar gravação' : 'gravar minha leitura'}>
+            {rec ? '⏹️ Parar' : saved === page ? '✅ Gravado' : '🎙️ Gravar minha leitura'}
+          </button>
+        )}
+        <button className="btn primary" disabled={!!rec} onClick={() => { if (page + 1 < book.pages.length) setPage(page + 1); else if (book.questions.length) setQ(0); else onFinish(1); }} aria-label="próxima página">▶</button>
       </div>
       {showDialogic && book.dialogic.length > 0 && (
         <div className="card adult" style={{ maxWidth: 640 }}>

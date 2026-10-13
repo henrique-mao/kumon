@@ -41,10 +41,16 @@ export function ItemRunner({
   const firstError = useRef<{ expected: string; chosen: string } | undefined>(undefined);
   const idle = useRef<number | undefined>(undefined);
 
-  // No alfabeto móvel, a legenda não pode mostrar a palavra que a criança precisa escrever.
+  // A legenda não pode entregar a resposta: no alfabeto móvel (a palavra a escrever) e nas escolhas
+  // entre palavras escritas (senão a criança só compara letras, sem ler).
   const letters = (t: string) => t.toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
-  const secret = item.kind === 'build' ? letters(item.solution.join('')) : '';
-  const mask = (s: Say[]) => (secret ? s.map((x) => (letters(x.text) === secret ? { ...x, hideCaption: true } : x)) : s);
+  const secrets = new Set(
+    item.kind === 'build' ? [letters(item.solution.join(''))]
+      : item.kind === 'choose' ? item.options.flatMap((o) => (o.token.kind === 'text' ? [letters(o.token.text)] : []))
+        : [],
+  );
+  secrets.delete('');
+  const mask = (s: Say[]) => (secrets.size ? s.map((x) => (secrets.has(letters(x.text)) ? { ...x, hideCaption: true } : x)) : s);
   const say = (s: Say[]) => speak(mask(s));
   const poke = () => {
     clearTimeout(idle.current);

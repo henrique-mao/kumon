@@ -1,0 +1,13 @@
+{
+  "name": "degrau-site",
+  "private": true,
+  "description": "Raiz para hospedagem (Hostinger/Netlify/Vercel): instala e compila o app em app/ e gera o site estático em dist/.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "postinstall": "npm ci --prefix app --include=dev",
+    "build": "npm run build --prefix app -- --outDir ../dist --emptyOutDir",
+    "dev": "npm run dev --prefix app",
+    "preview": "npx --prefix app vite preview --outDir dist",
+    "test": "npm test --prefix app"
+  }
+}

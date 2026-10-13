@@ -10,3 +10,11 @@ Método Kumon e em técnicas consagradas de alfabetização e ensino de matemát
 
 > "Kumon" é marca registrada do Kumon Institute of Education. Este projeto não é afiliado ao Kumon e usa
 > apenas princípios pedagógicos gerais.
+
+## Plugin WordPress — Informação Nutricional
+
+| Caminho | Conteúdo |
+|---------|----------|
+| [`wordpress/informacao-nutricional/`](wordpress/informacao-nutricional/) | Código do plugin (Tabela nutricional ANVISA, selo "ALTO EM", ingredientes, alérgicos, cuidados, selos, widget Elementor). Instruções em [`readme.txt`](wordpress/informacao-nutricional/readme.txt). |
+| [`wordpress/dist/informacao-nutricional.zip`](wordpress/dist/informacao-nutricional.zip) | Pacote pronto para enviar em Plugins > Adicionar novo > Enviar plugin. |
+| [`wordpress/screenshots/`](wordpress/screenshots/) | Prévias da ficha (clara/escura) e do cadastro. |

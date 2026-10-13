@@ -1,0 +1,335 @@
+/* ==========================================================================
+   Informação Nutricional — frontend
+   Herda fontes do tema (BeTheme / Elementor). Cores via variáveis CSS.
+   A tabela nutricional e o selo "ALTO EM" seguem o modelo regulatório
+   (preto sobre branco, fonte sem serifa) e NÃO devem ser recoloridos.
+   ========================================================================== */
+
+.inn-ficha {
+	--inn-accent: #0089f7;
+	--inn-bg: #ffffff;
+	--inn-text: #444444;
+	--inn-heading: #161922;
+	--inn-muted: #8a8a8a;
+	--inn-line: rgba(0, 0, 0, .1);
+	--inn-radius: 4px;
+	--inn-tab-bg: #f7f7f7;
+
+	box-sizing: border-box;
+	position: relative;
+	margin: 30px 0;
+	padding: 30px;
+	color: var(--inn-text);
+	background: var(--inn-bg);
+	border-radius: var(--inn-radius);
+	font-family: inherit;
+	line-height: 1.6;
+}
+
+.inn-ficha *,
+.inn-ficha *::before,
+.inn-ficha *::after { box-sizing: border-box; }
+
+.inn-ficha--dark {
+	--inn-bg: #111111;
+	--inn-text: #cfcfcf;
+	--inn-heading: #ffffff;
+	--inn-muted: #9a9a9a;
+	--inn-line: rgba(255, 255, 255, .12);
+	--inn-tab-bg: #1b1b1b;
+}
+
+.inn-ficha--parte { padding: 0; margin: 0 0 20px; background: transparent; }
+
+.inn-ficha--vazio {
+	padding: 20px;
+	border: 1px dashed var(--inn-accent);
+	text-align: center;
+	font-size: 14px;
+}
+
+/* Título (estilo BeTheme: caixa alta + linha de destaque) */
+.inn-ficha__title,
+.inn-panel__title {
+	margin: 0 0 20px;
+	color: var(--inn-heading);
+	text-transform: uppercase;
+	letter-spacing: 2px;
+	font-weight: 700;
+}
+.inn-ficha__title { font-size: 22px; }
+.inn-ficha__title::after,
+.inn-panel__title::after {
+	content: "";
+	display: block;
+	width: 40px;
+	height: 2px;
+	margin-top: 10px;
+	background: var(--inn-accent);
+}
+.inn-panel__title { font-size: 15px; }
+
+.inn-ficha__header {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px 24px;
+	align-items: center;
+	margin-bottom: 26px;
+}
+
+/* --------------------------------------------------------------------------
+   Abas
+   -------------------------------------------------------------------------- */
+.inn-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 0 24px;
+	border-bottom: 1px solid var(--inn-line);
+}
+
+.inn-ficha .inn-tabs__tab {
+	appearance: none;
+	margin: 0 0 -1px;
+	padding: 12px 20px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: var(--inn-muted);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	cursor: pointer;
+	box-shadow: none;
+	transition: color .2s, border-color .2s, background-color .2s;
+}
+
+.inn-ficha .inn-tabs__tab:hover { color: var(--inn-heading); background: var(--inn-tab-bg); }
+.inn-ficha .inn-tabs__tab.is-active { color: var(--inn-accent); border-bottom-color: var(--inn-accent); }
+.inn-ficha .inn-tabs__tab:focus-visible { outline: 2px solid var(--inn-accent); outline-offset: 2px; }
+
+/* Sem JS todas as seções ficam visíveis; com JS só a ativa. */
+.inn-ficha--abas.inn-js .inn-panel { display: none; }
+.inn-ficha--abas.inn-js .inn-panel.is-active { display: block; animation: inn-fade .25s ease; }
+.inn-ficha--abas.inn-js .inn-tabs ~ .inn-panels .inn-panel__title { display: none; }
+
+.inn-ficha--lista .inn-panel + .inn-panel,
+.inn-ficha--abas:not(.inn-js) .inn-panel + .inn-panel {
+	margin-top: 30px;
+	padding-top: 30px;
+	border-top: 1px solid var(--inn-line);
+}
+
+@keyframes inn-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* --------------------------------------------------------------------------
+   Tabela nutricional (IN 75/2020)
+   -------------------------------------------------------------------------- */
+.inn-tabela {
+	max-width: 520px;
+	padding: 10px 14px 8px;
+	border: 2px solid #000;
+	background: #fff;
+	color: #000;
+	font-family: Arial, Helvetica, "Helvetica Neue", sans-serif;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.inn-tabela__title {
+	padding: 4px 0 8px;
+	border-bottom: 1px solid #000;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-align: center;
+}
+
+.inn-tabela__porcao { padding: 8px 0; }
+
+.inn-tabela__bar { height: 10px; margin: 0 -4px 2px; background: #000; }
+
+.inn-ficha .inn-tabela table {
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-collapse: collapse;
+	background: #fff;
+	color: #000;
+	font: inherit;
+}
+
+.inn-ficha .inn-tabela th,
+.inn-ficha .inn-tabela td {
+	padding: 5px 6px;
+	border: 0;
+	border-bottom: 1px solid #000;
+	background: #fff;
+	color: #000;
+	text-align: right;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.inn-ficha .inn-tabela thead th { font-weight: 700; font-size: 16px; border-bottom-width: 1px; }
+.inn-ficha .inn-tabela thead th:nth-child(2),
+.inn-ficha .inn-tabela tbody td:nth-child(2),
+.inn-ficha .inn-tabela thead th:nth-child(3),
+.inn-ficha .inn-tabela tbody td:nth-child(3) { border-right: 1px solid #000; }
+.inn-ficha .inn-tabela abbr { text-decoration: none; border: 0; cursor: help; }
+
+.inn-ficha .inn-tabela tbody th {
+	font-weight: 400;
+	text-align: left;
+	white-space: normal;
+}
+
+.inn-ficha .inn-tabela tr.inn-level-1 th { padding-left: 18px; }
+.inn-ficha .inn-tabela tr.inn-level-2 th { padding-left: 32px; }
+.inn-ficha .inn-tabela tbody tr:last-child th,
+.inn-ficha .inn-tabela tbody tr:last-child td { border-bottom: 1px solid #000; }
+
+.inn-tabela__nota { padding: 6px 0 2px; font-size: 12px; }
+
+@media (max-width: 480px) {
+	.inn-tabela { font-size: 13px; padding: 8px 8px 6px; }
+	.inn-tabela__title { font-size: 17px; letter-spacing: 1px; }
+	.inn-ficha .inn-tabela th,
+	.inn-ficha .inn-tabela td { padding: 4px 3px; }
+	.inn-ficha .inn-tabela thead th { font-size: 13px; }
+	.inn-ficha .inn-tabela tr.inn-level-1 th { padding-left: 10px; }
+	.inn-ficha .inn-tabela tr.inn-level-2 th { padding-left: 18px; }
+}
+
+/* --------------------------------------------------------------------------
+   Selo frontal "ALTO EM" (lupa) — RDC 429/2020
+   -------------------------------------------------------------------------- */
+.inn-alto-em {
+	display: inline-flex;
+	align-items: stretch;
+	gap: 5px;
+	padding: 5px;
+	border: 2px solid #000;
+	border-radius: 9px;
+	background: #fff;
+	color: #000;
+	font-family: "Arial Narrow", "Roboto Condensed", Arial, Helvetica, sans-serif;
+	font-weight: 700;
+	line-height: 1.05;
+	text-transform: uppercase;
+	vertical-align: middle;
+}
+
+.inn-alto-em__head {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px 4px 6px;
+	border: 2px solid #000;
+	border-radius: 6px;
+	background: #fff;
+	font-size: 17px;
+	white-space: nowrap;
+}
+
+.inn-alto-em__lupa { width: 26px; height: 26px; flex: none; }
+
+.inn-alto-em__items { display: inline-flex; gap: 5px; }
+
+.inn-alto-em__item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 92px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	background: #000;
+	color: #fff;
+	font-size: 14px;
+	letter-spacing: .3px;
+	text-align: center;
+}
+
+.inn-alto-em--vertical { flex-direction: column; }
+.inn-alto-em--vertical .inn-alto-em__head { justify-content: center; }
+.inn-alto-em--vertical .inn-alto-em__items { flex-direction: column; }
+
+@media (max-width: 480px) {
+	.inn-alto-em--horizontal { flex-wrap: wrap; }
+	.inn-alto-em__item { min-width: 0; padding: 5px 8px; font-size: 12px; }
+	.inn-alto-em__head { font-size: 14px; }
+}
+
+/* --------------------------------------------------------------------------
+   Selos informativos
+   -------------------------------------------------------------------------- */
+.inn-ficha .inn-selos {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.inn-ficha .inn-selo {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 6px 14px 6px 10px;
+	border: 1px solid var(--inn-accent);
+	border-radius: 999px;
+	color: var(--inn-accent);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	line-height: 1.2;
+}
+.inn-ficha .inn-selo::before { display: none; }
+.inn-selo__icon { width: 18px; height: 18px; flex: none; }
+
+/* --------------------------------------------------------------------------
+   Ingredientes / Alérgicos / Cuidados
+   -------------------------------------------------------------------------- */
+.inn-ingredientes p { margin: 0 0 10px; }
+
+.inn-ficha .inn-alergicos { margin: 0; padding: 0; list-style: none; }
+.inn-ficha .inn-alergicos__item {
+	margin: 0 0 8px;
+	padding: 10px 14px;
+	border-left: 3px solid var(--inn-accent);
+	background: var(--inn-tab-bg);
+	color: var(--inn-heading);
+	font-weight: 700;
+	letter-spacing: .3px;
+}
+.inn-ficha .inn-alergicos__item::before { display: none; }
+
+.inn-cuidados { display: grid; gap: 14px; margin: 0; }
+.inn-cuidados__item { padding-bottom: 14px; border-bottom: 1px solid var(--inn-line); }
+.inn-cuidados__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.inn-cuidados dt {
+	margin: 0 0 4px;
+	color: var(--inn-accent);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+}
+.inn-cuidados dd { margin: 0; }
+
+@media (max-width: 767px) {
+	.inn-ficha { padding: 20px 16px; }
+	.inn-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+	.inn-tabs::-webkit-scrollbar { display: none; }
+	.inn-ficha .inn-tabs__tab { flex: none; padding: 10px 12px; font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.inn-ficha--abas.inn-js .inn-panel.is-active { animation: none; }
+}
